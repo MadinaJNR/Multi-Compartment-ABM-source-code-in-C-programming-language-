@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<xmodel version="2">
+<name>MAPK + tribs Model</name>
+<author>Aban Shuaib May 2011 adapted from Mark P, Simon C</author>
+<date>171104</date>
+<notes><![CDATA[
+    state variable
+	
+    MKK
+        0 -  free in cyto
+        1 -  bound trib in cyto - forms MT3
+			11 - bound to trib, mk, as MMT3 
+        2 -  bound to MK - forms pMK in the nucleous
+			22 - as pMK bound to exporting rec
+			21 - as pMK bound to AP-1
+			24 - as a dormant pMK after it was bound to AP-1
+		55 - dMKK dormant MKK waiting for RADP to get to 0 to shift back to MKK (state 0)
+	       
+    trib
+       900 - free in cyto
+	   
+    MK
+        200 - free in cyto
+		222 - dMK after it binds MT3	
+	AP-1
+        400 - dormant free
+        401 - dormant bound
+		403 - active free
+		404 - active bound
+		
+    Exrec
+        500 - dormant-FREE
+        501 - active - BOUND 
+	
+	disociation constants
+		RADP - dMKK (55) to MKK (0)
+		RADP2 - MT3 (1) to Trb (900)
+		RADP3 - dMK (222) to MK (2)
+		RADP4 - MT3T (11) to MT3 (1)
+		
+]]></notes>
+
+
+<!--******** Environment values and functions ********-->
+<environment>
+	<constants>
+		<variable><type>double</type><name>cell_radius</name></variable>
+		<variable><type>double</type><name>nuclear_radius</name></variable>
+	</constants>
+	<functions><file>dMKK_55+diskZ_FINNISHED4.c</file></functions>
+</environment>
+
+<!--******** X-machine Agent - Protein ********-->
+<agents>
+	<xagent>
+		<name>Protein</name>
+		<memory>
+			<variable><type>int</type><name>id</name></variable>
+			<variable><type>double</type><name>postheta</name></variable>
+			<variable><type>double</type><name>posphi</name></variable>
+			<variable><type>double</type><name>posr</name></variable>
+			<variable><type>double</type><name>posx</name></variable>
+			<variable><type>double</type><name>posy</name></variable>
+			<variable><type>double</type><name>posz</name></variable>
+			<variable><type>double</type><name>movetheta</name></variable>
+			<variable><type>double</type><name>movephi</name></variable>
+			<variable><type>double</type><name>mover</name></variable>
+			<variable><type>int</type><name>state</name></variable>
+			<variable><type>int</type><name>RADP</name></variable>
+			<variable><type>int</type><name>RADP2</name></variable>
+			<variable><type>int</type><name>RADP3</name></variable>
+			<variable><type>int</type><name>RADP4</name></variable>				
+			<variable><type>int</type><name>boundindex</name></variable>	 			
+			<variable><type>double</type><name>iradius</name></variable>    
+			<variable><type>int</type><name>disval</name></variable>
+		</memory>
+		<functions>
+            <!-- ******** Start of Function Protein Outputdata ******* -->
+			<function>
+				<name>Protein_outputdata</name>
+				<description>Output location message</description>
+				<currentState>00</currentState>
+                <nextState>01</nextState>		
+				<outputs>
+					<output><messageName>location</messageName></output>
+				</outputs>
+			</function>
+            <!-- ******** End of Function Protein Outputdata ******* -->
+            <!-- ******** Start of Function Protein Inputdata ******* -->
+			<function>
+				<name>Protein_inputdata</name>
+				<description>Read all messages from other agents</description>
+				<currentState>01</currentState>
+                <nextState>02</nextState>		
+				<inputs>
+					<input>
+						<messageName>startbond</messageName>
+					</input>
+					<input>
+						<messageName>location</messageName>
+					</input>
+				</inputs>
+				<outputs>
+					<output><messageName>newbond</messageName></output>
+				</outputs>
+			</function>
+            <!-- ******** End of Function Protein Inputdata ******* -->
+            <!-- ******** Start of Function Protein CheckBond Tries ******* -->
+			<function>
+				<name>Protein_checkbondtries</name>
+				<description>check bond tries</description>
+				<currentState>02</currentState>
+                <nextState>03</nextState>		
+				<inputs>
+					<input>
+						<messageName>newbond</messageName>
+					</input>	
+				</inputs>
+				<outputs>
+					<output><messageName>finalbond</messageName></output>
+				</outputs>
+			</function>
+            <!-- ******** End of Function Protein CheckBond Tries ******* -->
+            <!-- ******** Start of Function Protein Move ******* -->
+			<function>
+				<name>Protein_move</name>
+				<note>movement and check bond messages</note>
+				<currentState>03</currentState>
+                <nextState>04</nextState>		
+				<inputs>
+					<input>
+						<messageName>finalbond</messageName>
+					</input>
+				</inputs>
+			</function>
+            <!-- ******** Start of Function Protein Move ******* -->
+		</functions>
+	</xagent>
+<!--******** End of X-machine Agent - Protein ********-->
+	
+<!--******** X-machine Agent - Receptor ********-->
+	<xagent>
+		<name>Receptor</name>
+		<memory>
+			<variable><type>int</type><name>id</name></variable>
+			<variable><type>double</type><name>postheta</name></variable>
+			<variable><type>double</type><name>posphi</name></variable>
+			<variable><type>double</type><name>posr</name></variable>
+			<variable><type>double</type><name>posx</name></variable>
+			<variable><type>double</type><name>posy</name></variable>
+			<variable><type>double</type><name>posz</name></variable>
+			<variable><type>double</type><name>movetheta</name></variable>
+			<variable><type>double</type><name>movephi</name></variable>
+			<variable><type>double</type><name>mover</name></variable>
+			<variable><type>int</type><name>state</name></variable>
+			<variable><type>int</type><name>recdelay</name></variable>
+			<variable><type>int</type><name>boundindex</name></variable>
+			<variable><type>double</type><name>iradius</name></variable>
+		</memory>
+		<functions>
+            <!-- ******** Start of Function Receptor Outputdata ******* -->
+			<function>
+				<name>Receptor_outputdata</name>
+				<description>Output location message and check nuclear receptor timers</description>
+				<currentState>00</currentState>
+                <nextState>01</nextState>		
+				<outputs>
+                    <output><messageName>location</messageName></output>
+					<output><messageName>startbond</messageName></output>
+				</outputs>
+			</function>
+            <!-- ******** End of Function Receptor Outputdata ******* -->
+            <!-- ******** Start of Function Receptor Inputdata ******* -->
+			<function>
+				<name>Receptor_inputdata</name>
+				<description>Read all messages from other agents</description>
+				<currentState>01</currentState>
+                <nextState>02</nextState>		
+				<inputs>
+					<input>
+						<messageName>location</messageName>
+					</input>
+				</inputs>
+				<outputs>
+					<output><messageName>newbond</messageName></output>
+				</outputs>
+			</function>
+            <!-- ******** End of Function Receptor Inputdata ******* -->
+            <!-- ******** Start of Function Receptor Move ******* -->
+			<function>
+				<name>Receptor_move</name>
+				<description>movement and check bond messages</description>
+				<currentState>02</currentState>
+                <nextState>03</nextState>		
+				<inputs>
+					<input>
+						<messageName>finalbond</messageName>
+					</input>
+				</inputs>
+			</function>
+            <!-- ******** Start of Function Receptor Inputdata ******* -->
+		</functions>
+	</xagent>
+<!--******** End of x-machine Agent - Protein ********-->
+</agents>
+<!--******** End of x-machine Agents ********-->
+
+
+<!--******** Messages being pposted by the Agents to Communicate ********-->
+<messages>
+	<message>
+		<name>location</name>
+		<description>to check locations</description>
+			<variable><type>int</type><name>id</name>
+				<description>Agent id</description>
+			</variable>	
+			<variable><type>double</type><name>x</name>
+				<description>The x-axis position</description>
+			</variable>	
+			<variable><type>double</type><name>y</name>
+				<description>The y-axis position</description>
+			</variable>	
+			<variable><type>double</type><name>z</name>
+				<description>The z-axis position</description>
+			</variable>	
+			<variable><type>int</type><name>state</name>
+				<description>Agent type and state</description>
+			</variable>	
+			<variable><type>double</type><name>range</name>
+				<description>The agent's message range</description>
+			</variable>
+	</message>
+	<message>
+		<name>startbond</name>
+		<description>to make bonds</description>
+			<variable><type>int</type><name>idfrom</name>
+				<description>From agent id</description>
+			</variable>	
+			<variable><type>int</type><name>statefrom</name>
+				<description>From agent state</description>
+			</variable>	
+			<variable><type>int</type><name>idto</name>
+				<description>To agent id</description>
+			</variable>	
+			<variable><type>int</type><name>bindunbind</name>
+				<description>Whether to bind</description>
+			</variable>	
+			<variable><type>double</type><name>distance</name>
+				<description>Distance between agents</description>
+			</variable>	
+			<variable><type>double</type><name>range</name>
+				<description>The agent's message range</description>
+			</variable>	
+			<variable><type>double</type><name>x</name>
+				<description>The x-axis position</description>
+			</variable>	
+			<variable><type>double</type><name>y</name>
+				<description>The y-axis position</description>
+			</variable>	
+			<variable><type>double</type><name>z</name>
+				<description>The z-axis position</description>
+			</variable>
+	</message>
+	<message>
+		<name>newbond</name>
+		<description>to make bonds</description>
+			<variable><type>int</type><name>idfrom</name>
+				<description>From agent id</description>
+			</variable>	
+			<variable><type>int</type><name>statefrom</name>
+				<description>From agent state</description>
+			</variable>	
+			<variable><type>int</type><name>idto</name>
+				<description>To agent id</description>
+			</variable>	
+			<variable><type>int</type><name>bindunbind</name>
+				<description>Whether to bind</description>
+			</variable>	
+			<variable><type>double</type><name>distance</name>
+				<description>Distance between agents</description>
+			</variable>	
+			<variable><type>double</type><name>range</name>
+				<description>The agent's message range</description>
+			</variable>	
+			<variable><type>double</type><name>x</name>
+				<description>The x-axis position</description>
+			</variable>	
+			<variable><type>double</type><name>y</name>
+				<description>The y-axis position</description>
+			</variable>	
+			<variable><type>double</type><name>z</name>
+				<description>The z-axis position</description>
+			</variable>
+	</message>
+	<message>
+		<name>finalbond</name>
+		<description>to make bonds</description>
+			<variable><type>int</type><name>idfrom</name>
+				<description>From agent id</description>
+			</variable>	
+			<variable><type>int</type><name>statefrom</name>
+				<description>From agent state</description>
+			</variable>	
+			<variable><type>int</type><name>idto</name>
+				<description>To agent id</description>
+			</variable>	
+			<variable><type>int</type><name>bindunbind</name>
+				<description>Whether to bind</description>
+			</variable>	
+			<variable><type>double</type><name>distance</name>
+				<description>Distance between agents</description>
+			</variable>	
+			<variable><type>double</type><name>range</name>
+				<description>The agent's message range</description>
+			</variable>	
+			<variable><type>double</type><name>x</name>
+				<description>The x-axis position</description>
+			</variable>	
+			<variable><type>double</type><name>y</name>
+				<description>The y-axis position</description>
+			</variable>	
+			<variable><type>double</type><name>z</name>
+				<description>The z-axis position</description>
+			</variable>
+	</message>
+</messages>
+<!--******** End of Messages ********-->
+</xmodel>
