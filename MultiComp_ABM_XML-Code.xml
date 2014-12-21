@@ -1,0 +1,470 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<xmodel version="2">
+<name>MAPK + tribs Model</name>
+<author>Aban Shuaib May 2011 adapted from Mark P, Simon C</author>
+<date>171104</date>
+<notes><![CDATA[
+    state variable
+	
+    MKK
+        0 -  free in cyto
+			55 - dMKK (dormant MKK) formed from the interaction of MKK with MK & waiting for RADP to get to 0 to shift back to MKK (state 0)
+			555 - dMKK (dormant MKK) formed the interaction of MKK with Trib & waiting for RADP to get to 0 to shift back to MKK (state 0)
+			(1 -  bound trib in cyto - forms MT3 >>> These are states of Trb not MKK)
+			(11 - bound to Trb, MK, as MMT3 >>> These are states of Trb not MKK) 
+        
+
+	       
+    Trb
+       900 - free in cyto
+			1 -  bound to MKK in cyto - forms MT3
+			11 - bound to MKK, MK, as MMT3 
+			
+    MK [[ >>> The species after it binds to AP-1 in its 4 forms need to be reviewed, where the diagrams in the lab book and the .c code should match]]
+		2 -  activated by MKK - forms pMK in the nucleous
+			22 - as pMK bound to Free-Active-API (400) [[ NOTE: was written as "as pMK bound to exporting rec >>> ### REALLY?! ###" ???]]
+			21 - as pMK bound to Free-Dormant-API (400) 
+			24 - as a dormant pMK (dpMK) after it was bound to APII (free/bound & active AP-1)
+			42 - as a dormant pMK (dpMK) after it was bound to API (free/bound & dormant AP-1)
+        200 - free in cyto
+		222 - dMK after it binds MT3	
+	
+	disociation constants
+		RADP - dMKK (55) to MKK (0)
+			 - all AP-1 states to shift to contrary (e.g. 403 to 404 etc)
+			 -  [[ dpMK (after binding to AP-1)to shift back to pMK >>> replaced by RADP8(?) ]]
+		RADP2 - MT3 (1) to Trb (900)
+		RADP3 - dMK (222) to MK (2)
+		RADP4 - MT3T (11) to MT3 (1)
+		RADP5 - pMK-activated bound-active AP-1(22) to free-dormant-AP-1(400) && (undefined state) to (404) && pMK-activated free-active AP-1(22) to free-active AP-1(403)
+		RADP6 - (400) to (401) && (401) to (400)
+		RADP7 - free-active AP-1(403) to bound-active(404) && bound-active(404) to free-active AP-1(403)
+		RADP8 - dpMK* (42) to pMK (2) && dpMK (24) to pMK
+		
+		recdelay - ExR
+		recdelay2 - ImR
+		
+	
+	API = dormant AP-1 
+        400 - dormant free
+        401 - dormant bound
+	APII= active AP-1
+		403 - active free
+		404 - active bound
+		
+    Exrec (ExR)
+        500 - active - FREE
+        501 - dormant-FREE
+        503 - dormant- BOUND -
+        504 - active - BOUND	
+		
+	(503 & 504 STATES: not used in the code as ExR-pMK complex has not been created yet ??? ??????? ?? ??????? ?? ??? ??????? ??? ??????? ????? ?? ???? ????????)
+	
+
+	Imrec (ImR)
+	    600 - active - FREE
+        601 - dormant-FREE
+        603 - dormant- BOUND 
+        604 - active - BOUND
+		
+		(503 & 504 STATES: not used in the code as ExR-pMK complex has not been created yet ??? ??????? ?? ??????? ?? ??? ??????? ??? ??????? ????? ?? ???? ????????)
+		
+
+]]></notes>
+
+
+<!--******** Environment values and functions ********-->
+<environment>
+	<constants>
+		<variable><type>double</type><name>cell_radius</name></variable>
+		<variable><type>double</type><name>nuclear_radius</name></variable>
+	</constants>
+	<functions><file>23.08.13_disK=Rand1500_Test.c</file></functions>
+</environment>
+
+<!--******** X-machine Agent - MKK ********-->
+<agents>
+	<xagent>
+			<name>MKK</name>
+			<memory>
+				<variable><type>int</type><name>id</name></variable>
+				<variable><type>int</type><name>comptag</name></variable>
+				<variable><type>double</type><name>postheta</name></variable>
+				<variable><type>double</type><name>posphi</name></variable>
+				<variable><type>double</type><name>posr</name></variable>
+				<variable><type>double</type><name>posx</name></variable>
+				<variable><type>double</type><name>posy</name></variable>
+				<variable><type>double</type><name>posz</name></variable>
+				<variable><type>double</type><name>movetheta</name></variable>
+				<variable><type>double</type><name>movephi</name></variable>
+				<variable><type>double</type><name>mover</name></variable>
+				<variable><type>int</type><name>state</name></variable>
+				<variable><type>int</type><name>RADP</name></variable>
+				<variable><type>int</type><name>boundindex</name></variable>				
+				<variable><type>double</type><name>iradius</name></variable>    
+				<variable><type>int</type><name>disval</name></variable>
+			</memory>
+			<!-- ******** Start of Function MK Outputdata ******* -->
+			<functions>
+				<function>
+					<name>MKK_outputdata</name>
+					<description>Output location message</description>
+					<currentState>00</currentState>
+					<nextState>01</nextState>		
+					<outputs>
+						<output><messageName>MKKlocation</messageName></output>
+					</outputs>
+				</function>
+				<!-- ******** End of Function MK Outputdata ******* -->
+				<!-- ******** Start of Function MK Inputdata ******* -->
+				<function>
+					<name>MKK_inputdata</name>
+					<description>Read all messages from other agents</description>
+					<currentState>01</currentState>
+					<nextState>02</nextState>		
+					<inputs>
+						<input>
+							<messageName>MKlocation</messageName>
+						</input>	
+					</inputs>
+					<outputs>
+						<output><messageName>MKKnewbond</messageName></output>
+					</outputs>
+				</function>
+				<!-- ******** End of Function MK Inputdata ******* -->
+				<!-- ******** NO Start of Function MK CheckBond Tries ******* -->
+				<!-- ******** NO End of Function MK CheckBond Tries ******* -->
+				<!-- ******** Start of Function MK Move ******* -->
+				<function>
+					<name>MKK_move</name>
+					<note>movement and check bond messages</note>
+					<currentState>02</currentState>
+					<nextState>03</nextState>
+				<inputs>
+					<input>
+						<messageName>MKfinalbond</messageName>
+					</input>
+				</inputs>					
+				</function>
+				<!-- ******** Start of Function MK Move ******* -->
+			</functions>
+		</xagent>
+	
+<!--******** X-machine Agent - MK ********-->
+	<xagent>
+		<name>MK</name>
+		<memory>
+			<variable><type>int</type><name>id</name></variable>
+			<variable><type>int</type><name>comptag</name></variable>
+			<variable><type>double</type><name>postheta</name></variable>
+			<variable><type>double</type><name>posphi</name></variable>
+			<variable><type>double</type><name>posr</name></variable>
+			<variable><type>double</type><name>posx</name></variable>
+			<variable><type>double</type><name>posy</name></variable>
+			<variable><type>double</type><name>posz</name></variable>
+			<variable><type>double</type><name>movetheta</name></variable>
+			<variable><type>double</type><name>movephi</name></variable>
+			<variable><type>double</type><name>mover</name></variable>
+			<variable><type>int</type><name>state</name></variable>
+			<variable><type>int</type><name>RADP3</name></variable>
+			<variable><type>int</type><name>RADP8</name></variable>
+			<variable><type>double</type><name>iradius</name></variable>    
+			<variable><type>int</type><name>disval</name></variable>
+		</memory>
+		<!-- ******** Start of Function MK Outputdata ******* -->
+		<functions>
+			<function>
+				<name>MK_outputdata</name>
+				<description>Output location message</description>
+				<currentState>00</currentState>
+                <nextState>01</nextState>		
+				<outputs>
+					<output><messageName>MKlocation</messageName></output>
+				</outputs>
+			</function>
+            <!-- ******** End of Function MK Outputdata ******* -->
+            <!-- ******** Start of Function MK Inputdata ******* -->
+			<function>
+				<name>MK_inputdata</name>
+				<description>Read all messages from other agents</description>
+				<currentState>01</currentState>
+                <nextState>02</nextState>		
+				<inputs>
+					<input>
+						<messageName>MKKlocation</messageName>
+					</input>
+					<input>
+						<messageName>ExRlocation</messageName>
+					</input>
+				</inputs>
+			</function>
+            <!-- ******** End of Function MK Inputdata ******* -->
+            <!-- ******** Start of Function MK CheckBond Tries ******* -->
+			<function>
+				<name>MK_checkbondtries</name>
+				<description>check bond tries</description>
+				<currentState>02</currentState>
+                <nextState>03</nextState>		
+				<inputs>
+					<input>
+						<messageName>MKKnewbond</messageName>
+					</input>
+					<input>
+						<messageName>ExRnewbond</messageName>
+					</input>
+				</inputs>
+				<outputs>
+					<output><messageName>MKfinalbond</messageName></output>
+				</outputs>
+			</function>
+            <!-- ******** End of Function MK CheckBond Tries ******* -->
+            <!-- ******** Start of Function MK Move ******* -->
+			<function>
+				<name>MK_move</name>
+				<note>movement and check bond messages</note>
+				<currentState>03</currentState>
+                <nextState>04</nextState>		
+			</function>
+            <!-- ******** Start of Function MK Move ******* -->
+		</functions>
+	</xagent>
+<!--******** End of X-machine Agent - MK ********-->
+	
+<!--******** X-machine Agent - ExR ********-->
+	<xagent>
+		<name>ExR</name>
+		<memory>
+			<variable><type>int</type><name>id</name></variable>
+			<variable><type>double</type><name>postheta</name></variable>
+			<variable><type>double</type><name>posphi</name></variable>
+			<variable><type>double</type><name>posr</name></variable>
+			<variable><type>double</type><name>posx</name></variable>
+			<variable><type>double</type><name>posy</name></variable>
+			<variable><type>double</type><name>posz</name></variable>
+			<variable><type>double</type><name>movetheta</name></variable>
+			<variable><type>double</type><name>movephi</name></variable>
+			<variable><type>double</type><name>mover</name></variable>
+			<variable><type>int</type><name>state</name></variable>
+			<variable><type>int</type><name>recdelay</name></variable>
+			<variable><type>int</type><name>boundindex</name></variable>
+			<variable><type>double</type><name>iradius</name></variable>
+		</memory>
+		<functions>
+            <!-- ******** Start of Function ExR Outputdata ******* -->
+			<function>
+				<name>ExR_outputdata</name>
+				<description>Output location message and check nuclear ExR timers</description>
+				<currentState>00</currentState>
+                <nextState>01</nextState>		
+				<outputs>
+                    <output><messageName>ExRlocation</messageName></output>
+				</outputs>
+			</function>
+            <!-- ******** End of Function ExR Outputdata ******* -->
+            <!-- ******** Start of Function ExR Inputdata ******* -->
+			<function>
+				<name>ExR_inputdata</name>
+				<description>Read all messages from other agents</description>
+				<currentState>01</currentState>
+                <nextState>02</nextState>		
+				<inputs>
+					<input>
+						<messageName>MKlocation</messageName>
+					</input>	
+				</inputs>
+				<outputs>
+					<output><messageName>ExRnewbond</messageName></output>
+				</outputs>
+			</function>
+            <!-- ******** End of Function ExR Inputdata ******* -->
+            <!-- ******** Start of Function ExR Move ******* -->
+			<function>
+				<name>ExR_move</name>
+				<description>movement and check bond messages</description>
+				<currentState>02</currentState>
+                <nextState>03</nextState>		
+				<inputs>
+					<input>
+						<messageName>MKfinalbond</messageName>
+					</input>
+				</inputs>
+			</function>
+            <!-- ******** Start of Function ExR Inputdata ******* -->
+		</functions>
+	</xagent>
+<!--******** End of x-machine Agent - ExR ********-->
+
+</agents>
+<!--******** End of x-machine Agents ********-->
+
+
+<!--******** Messages being pposted by the Agents to Communicate ********-->
+	
+<messages>
+	<message>
+		<name>MKKlocation</name>
+		<description>to check locations</description>
+			<variable><type>int</type><name>id</name>
+				<description>Agent id</description>
+			</variable>	
+			<variable><type>double</type><name>x</name>
+				<description>The x-axis position</description>
+			</variable>	
+			<variable><type>double</type><name>y</name>
+				<description>The y-axis position</description>
+			</variable>	
+			<variable><type>double</type><name>z</name>
+				<description>The z-axis position</description>
+			</variable>	
+			<variable><type>int</type><name>state</name>
+				<description>Agent type and state</description>
+			</variable>	
+			<variable><type>double</type><name>range</name>
+				<description>The agent's message range</description>
+			</variable>
+	</message>
+	
+	<message>
+		<name>MKlocation</name>
+		<description>to check locations</description>
+			<variable><type>int</type><name>id</name>
+				<description>Agent id</description>
+			</variable>	
+			<variable><type>double</type><name>x</name>
+				<description>The x-axis position</description>
+			</variable>	
+			<variable><type>double</type><name>y</name>
+				<description>The y-axis position</description>
+			</variable>	
+			<variable><type>double</type><name>z</name>
+				<description>The z-axis position</description>
+			</variable>	
+			<variable><type>int</type><name>state</name>
+				<description>Agent type and state</description>
+			</variable>	
+			<variable><type>double</type><name>range</name>
+				<description>The agent's message range</description>
+			</variable>
+	</message>
+
+	<message>
+		<name>ExRlocation</name>
+		<description>to check locations</description>
+			<variable><type>int</type><name>id</name>
+				<description>Agent id</description>
+			</variable>	
+			<variable><type>double</type><name>x</name>
+				<description>The x-axis position</description>
+			</variable>	
+			<variable><type>double</type><name>y</name>
+				<description>The y-axis position</description>
+			</variable>	
+			<variable><type>double</type><name>z</name>
+				<description>The z-axis position</description>
+			</variable>	
+			<variable><type>int</type><name>state</name>
+				<description>Agent type and state</description>
+			</variable>	
+			<variable><type>double</type><name>range</name>
+				<description>The agent's message range</description>
+			</variable>
+	</message>
+
+	<message>
+			<name>MKKnewbond</name>
+		<description>to make bonds</description>
+			<variable><type>int</type><name>idfrom</name>
+				<description>From agent id</description>
+			</variable>	
+			<variable><type>int</type><name>statefrom</name>
+				<description>From agent state</description>
+			</variable>	
+			<variable><type>int</type><name>idto</name>
+				<description>To agent id</description>
+			</variable>	
+			<variable><type>int</type><name>bindunbind</name>
+				<description>Whether to bind</description>
+			</variable>	
+			<variable><type>double</type><name>distance</name>
+				<description>Distance between agents</description>
+			</variable>	
+			<variable><type>double</type><name>range</name>
+				<description>The agent's message range</description>
+			</variable>	
+			<variable><type>double</type><name>x</name>
+				<description>The x-axis position</description>
+			</variable>	
+			<variable><type>double</type><name>y</name>
+				<description>The y-axis position</description>
+			</variable>	
+			<variable><type>double</type><name>z</name>
+				<description>The z-axis position</description>
+			</variable>
+	</message>
+	
+	<message>
+			<name>ExRnewbond</name>
+		<description>to make bonds</description>
+			<variable><type>int</type><name>idfrom</name>
+				<description>From agent id</description>
+			</variable>	
+			<variable><type>int</type><name>statefrom</name>
+				<description>From agent state</description>
+			</variable>	
+			<variable><type>int</type><name>idto</name>
+				<description>To agent id</description>
+			</variable>	
+			<variable><type>int</type><name>bindunbind</name>
+				<description>Whether to bind</description>
+			</variable>	
+			<variable><type>double</type><name>distance</name>
+				<description>Distance between agents</description>
+			</variable>	
+			<variable><type>double</type><name>range</name>
+				<description>The agent's message range</description>
+			</variable>	
+			<variable><type>double</type><name>x</name>
+				<description>The x-axis position</description>
+			</variable>	
+			<variable><type>double</type><name>y</name>
+				<description>The y-axis position</description>
+			</variable>	
+			<variable><type>double</type><name>z</name>
+				<description>The z-axis position</description>
+			</variable>
+	</message>
+	
+	<message>
+		<name>MKfinalbond</name>
+		<description>to make bonds</description>
+			<variable><type>int</type><name>idfrom</name>
+				<description>From agent id</description>
+			</variable>	
+			<variable><type>int</type><name>statefrom</name>
+				<description>From agent state</description>
+			</variable>	
+			<variable><type>int</type><name>idto</name>
+				<description>To agent id</description>
+			</variable>	
+			<variable><type>int</type><name>bindunbind</name>
+				<description>Whether to bind</description>
+			</variable>	
+			<variable><type>double</type><name>distance</name>
+				<description>Distance between agents</description>
+			</variable>	
+			<variable><type>double</type><name>range</name>
+				<description>The agent's message range</description>
+			</variable>	
+			<variable><type>double</type><name>x</name>
+				<description>The x-axis position</description>
+			</variable>	
+			<variable><type>double</type><name>y</name>
+				<description>The y-axis position</description>
+			</variable>	
+			<variable><type>double</type><name>z</name>
+				<description>The z-axis position</description>
+			</variable>
+	</message>
+</messages>
+<!--******** End of Messages ********-->
+</xmodel>
